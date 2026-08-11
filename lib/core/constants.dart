@@ -3,7 +3,7 @@
 /// البيانات وبيتحكم فيها صاحب المحل من لوحة التحكم — مش من هنا.
 class Shop {
   static const name = 'أخضر';
-  static const tagline = 'مِشتَقّي بالوَاحدَه';
+  static const tagline = 'مِنتَقي بالوَاحدَه';
   static const slogan = 'طازج .. نقي .. لأجلك';
 
   static const address =
