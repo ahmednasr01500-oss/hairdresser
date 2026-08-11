@@ -12,13 +12,13 @@ import 'package:flutter/foundation.dart'
 /// appId خاص بكل منصة، غيّر `appId` في [android] و[ios] بس — الباقي زي ما هو.
 /// راجع SETUP.md خطوة (٢).
 class DefaultFirebaseOptions {
-  static const String _apiKey = 'AIzaSyDP2O_p8w4iRvMFU_RQ8l4aaszT4DJ4AiA';
-  static const String _projectId = 'hairdresser-d6d24';
-  static const String _messagingSenderId = '8571108114';
+  static const String _apiKey = 'AIzaSyCqck36lWXsVCOQ5SR8Z-SewIDcjIbso4o';
+  static const String _projectId = 'akhdar-89577';
+  static const String _messagingSenderId = '1033627027701';
   static const String _databaseURL =
-      'https://hairdresser-d6d24-default-rtdb.firebaseio.com';
-  static const String _storageBucket = 'hairdresser-d6d24.firebasestorage.app';
-  static const String _webAppId = '1:8571108114:web:a99de2aa857603ed57d1cb';
+      'https://akhdar-89577-default-rtdb.firebaseio.com';
+  static const String _storageBucket = 'akhdar-89577.firebasestorage.app';
+  static const String _webAppId = '1:1033627027701:web:d452aef05392537c845dbc';
 
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) return web;
@@ -40,8 +40,8 @@ class DefaultFirebaseOptions {
     projectId: _projectId,
     databaseURL: _databaseURL,
     storageBucket: _storageBucket,
-    authDomain: 'hairdresser-d6d24.firebaseapp.com',
-    measurementId: 'G-8S85BX4D65',
+    authDomain: 'akhdar-89577.firebaseapp.com',
+    measurementId: 'G-SC0LK2CK9Q',
   );
 
   static const FirebaseOptions android = FirebaseOptions(

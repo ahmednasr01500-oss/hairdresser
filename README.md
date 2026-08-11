@@ -20,8 +20,8 @@
 
 بعد النشر:
 
-- **صفحة التحميل:** <https://hairdresser-d6d24.web.app>
-- **لوحة التحكم:** <https://hairdresser-d6d24.web.app/admin/>
+- **صفحة التحميل:** <https://akhdar-89577.web.app>
+- **لوحة التحكم:** <https://akhdar-89577.web.app/admin/>
 
 ## اللي التطبيق بيعمله
 

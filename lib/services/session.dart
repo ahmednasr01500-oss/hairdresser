@@ -74,27 +74,40 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _ensureSignedIn() async {
+  Future<bool> _ensureSignedIn() async {
     final auth = FirebaseAuth.instance;
     if (auth.currentUser == null) {
       try {
         await auth.signInAnonymously();
       } catch (e) {
         debugPrint('anonymous sign-in failed: $e');
-        return;
+        return false;
       }
     }
     _uid = auth.currentUser?.uid ?? '';
+    return _uid.isNotEmpty;
   }
 
-  Future<void> signIn({required String name, required String phone}) async {
+  /// بترجّع `false` لو مقدرناش نجيب هوية للجهاز من Firebase.
+  ///
+  /// من غير الهوية دي مفيش طلب يتبعت، فالشاشة اللي بتنادي لازم توقّف
+  /// وتقول للعميل. أشهر سببين: النت مقطوع، أو مزوّد "Anonymous" لسه
+  /// مش مفعّل في Firebase Console (راجع SETUP.md خطوة ١).
+  Future<bool> signIn({required String name, required String phone}) async {
     _name = name.trim();
     _phone = phone.trim();
-    await _ensureSignedIn();
+    final ok = await _ensureSignedIn();
+    if (!ok) {
+      // مبنحفظش بيانات ناقصة على الجهاز — نخلي العميل يعيد المحاولة نضيف.
+      _name = '';
+      _phone = '';
+      return false;
+    }
     await _prefs?.setString(_kName, _name);
     await _prefs?.setString(_kPhone, _phone);
     notifyListeners();
     _syncToServer();
+    return true;
   }
 
   Future<void> updateProfile({String? name, String? phone}) async {

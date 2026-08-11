@@ -34,5 +34,5 @@ firebase deploy --only hosting
 if ($LASTEXITCODE -ne 0) { throw "النشر فشل" }
 
 Write-Host "`n✅ تم." -ForegroundColor Green
-Write-Host "   صفحة التحميل : https://hairdresser-d6d24.web.app"
-Write-Host "   لوحة التحكم  : https://hairdresser-d6d24.web.app/admin/`n"
+Write-Host "   صفحة التحميل : https://akhdar-89577.web.app"
+Write-Host "   لوحة التحكم  : https://akhdar-89577.web.app/admin/`n"

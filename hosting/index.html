@@ -166,7 +166,7 @@ document.getElementById('downloadCard').innerHTML = isIOS ? `
   <a class="btn" href="${APK}" download>
     🤖 تحميل لأجهزة أندرويد
   </a>
-  <div class="size">حجم الملف حوالي ٢٤ ميجا</div>
+  <div class="size" id="apkSize">&nbsp;</div>
   <ol class="steps">
     <li>اضغط زرار التحميل فوق واستنى الملف يخلص.</li>
     <li>افتح الملف من الإشعارات أو من مجلد التنزيلات.</li>
@@ -179,6 +179,19 @@ document.getElementById('downloadCard').innerHTML = isIOS ? `
     أو بالتليفون.
   </div>
 `;
+
+/* حجم الملف بيتقري من الملف نفسه بدل ما يتكتب بالإيد ويبقى قديم بعد كل نشرة. */
+if (!isIOS) {
+  fetch(APK, { method: 'HEAD' })
+    .then(r => {
+      const bytes = Number(r.headers.get('content-length'));
+      if (!bytes) throw new Error('no size');
+      const mb = (bytes / 1048576).toFixed(0);
+      document.getElementById('apkSize').textContent = `حجم الملف حوالي ${mb} ميجا`;
+    })
+    // لو مقدرناش نجيب الحجم، السطر بيفضل فاضي — أهون من رقم غلط.
+    .catch(() => {});
+}
 </script>
 </body>
 </html>

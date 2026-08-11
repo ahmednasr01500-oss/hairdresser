@@ -45,13 +45,25 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
 
-    await Session.i.signIn(
+    final ok = await Session.i.signIn(
       name: _name.text,
       phone: _phone.text.replaceAll(RegExp(r'\D'), ''),
     );
 
     if (!mounted) return;
     setState(() => _busy = false);
+
+    // من غير هوية من Firebase مفيش طلب هيتبعت. بنوقّف هنا بدل ما نكمّل
+    // ونسيب العميل يكتشف المشكلة وهو بيأكّد طلبه.
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('مقدرناش نكمّل دلوقتي. اتأكد من النت وجرّب تاني.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+      return;
+    }
 
     // أول مرة بنسأل عن العنوان على طول عشان الطلب بعد كده يبقى خطوة واحدة.
     Navigator.of(context).pushReplacement(
