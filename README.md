@@ -13,8 +13,15 @@
 | الجزء | إيه هو | لمين |
 |---|---|---|
 | `lib/` | تطبيق Flutter (أندرويد + iOS) | العميل |
-| `web_admin/index.html` | لوحة تحكم — صفحة HTML واحدة | صاحب المحل |
+| `hosting/index.html` | صفحة تحميل التطبيق | لينك تبعته للزباين |
+| `hosting/admin/index.html` | لوحة تحكم — صفحة HTML واحدة | صاحب المحل |
 | `firebase/` | قواعد الأمان + بيانات البداية | مرة واحدة عند التركيب |
+| `deploy.ps1` | بناء + نسخ الـ APK + نشر | أمر واحد لكل نشرة |
+
+بعد النشر:
+
+- **صفحة التحميل:** <https://hairdresser-d6d24.web.app>
+- **لوحة التحكم:** <https://hairdresser-d6d24.web.app/admin/>
 
 ## اللي التطبيق بيعمله
 
@@ -40,10 +47,16 @@ flutter pub get
 flutter run
 ```
 
-اللوحة محتاجة سيرفر محلي (مش `file://`) عشان الـ ES modules:
+صفحة التحميل واللوحة محتاجين سيرفر محلي (مش `file://`) عشان الـ ES modules:
 
 ```bash
-npx --yes serve web_admin -l 5599
+npx --yes serve hosting -l 5599
+```
+
+## نشر
+
+```powershell
+.\deploy.ps1
 ```
 
 ## فحص قبل أي تعديل

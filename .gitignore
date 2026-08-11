@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ملف التطبيق اللي بيتنشر على صفحة التحميل. بيتولّد من البناء و`deploy.ps1`
+# بينسخه قبل النشر — محطّوش في git عشان ما نكدّسش ٢٤ ميجا مع كل نسخة.
+/hosting/*.apk
