@@ -153,6 +153,9 @@
     <button class="btn ghost sm" id="logout">خروج</button>
   </header>
 
+  <!-- بيظهر بس لو الحساب مش مسجّل في admins — من غيره كل حفظ بيترفض -->
+  <div id="notAdmin" style="display:none"></div>
+
   <nav>
     <button data-tab="orders" class="on">الطلبات <span class="badge" id="pendingCount" style="display:none">0</span></button>
     <button data-tab="products">الأصناف</button>
@@ -308,12 +311,38 @@ const $$ = (s) => Array.from(document.querySelectorAll(s));
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-function toast(msg){
+function toast(msg, isError = false){
   const t = $('#toast');
   t.textContent = msg;
+  t.style.background = isError ? 'var(--danger)' : 'var(--green-d)';
   t.style.display = 'block';
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => t.style.display = 'none', 2600);
+  toast._t = setTimeout(() => t.style.display = 'none', isError ? 6000 : 2600);
+}
+
+/* كل كتابة على قاعدة البيانات بتمرّ من هنا.
+ *
+ * السبب: Firebase بيعرض التغيير محليًا على طول، وبعدين لو السيرفر رفضه
+ * بيرجّعه. من غير الغلاف ده، صاحب المحل بيشوف اللي كتبه بيتمسح قدام
+ * عينيه من غير ما حد يقوله ليه — وده أسوأ شكل للفشل.
+ *
+ * أشهر سبب للرفض إن الـ UID بتاع الحساب مش موجود في عقدة admins. */
+async function save(promise, successMsg){
+  try {
+    await promise;
+    if (successMsg) toast(successMsg);
+    return true;
+  } catch (e) {
+    const denied = String(e?.code || e?.message || '').includes('permission');
+    toast(
+      denied
+        ? '⛔ الحفظ اترفض — حسابك لسه مش مصرّح له. شوف الرسالة الحمرا فوق.'
+        : 'الحفظ ما نجحش. اتأكد من النت وجرّب تاني.',
+      true,
+    );
+    if (denied) showNotAdminBanner();
+    return false;
+  }
 }
 
 const money = (v) => `${Number(v || 0).toFixed(2)} ${state.settings.currency || 'ج.م'}`;
@@ -478,15 +507,80 @@ async function doLogin(){
 
 $('#logout').addEventListener('click', () => signOut(auth));
 
+/* ══════════ التحقق من الصلاحية ══════════
+   الدخول بالإيميل بيثبت إنك أنت، لكن مش بيدّيك صلاحية تعديل. الصلاحية
+   جاية من وجود الـ UID في عقدة admins — والعقدة دي بتتكتب من Firebase
+   Console بس، عشان محدش يقدر يدّي نفسه صلاحية من اللوحة.
+
+   بنتأكد أول ما تدخل، ولو مش مصرّح بنقول ليه وإزاي يتظبط — مع الـ UID
+   جاهز للنسخ، لأنه أكتر حاجة بتضيع وقت في الخطوة دي. */
+let currentUser = null;
+
+async function checkAdmin(user){
+  currentUser = user;
+  try {
+    const snap = await get(ref(db, 'admins/' + user.uid));
+    if (snap.exists() && snap.val() === true){
+      $('#notAdmin').style.display = 'none';
+      return true;
+    }
+  } catch (e) {
+    // القواعد القديمة كانت مانعة القراءة حتى على الحساب نفسه. لو حصل ده،
+    // منقولش إنه مش أدمن — بنسيب أول محاولة حفظ هي اللي تكشف الحقيقة.
+    console.warn('تعذّر التحقق من الصلاحية:', e);
+    return true;
+  }
+  showNotAdminBanner();
+  return false;
+}
+
+function showNotAdminBanner(){
+  const uid = currentUser?.uid || '—';
+  const box = $('#notAdmin');
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="background:#FDECEA;border-bottom:2px solid var(--danger);padding:16px 20px">
+      <div style="max-width:1200px;margin:0 auto">
+        <b style="color:var(--danger);font-size:15px">⛔ حسابك لسه مش مصرّح له بالتعديل</b>
+        <div style="margin:8px 0 12px;line-height:1.9;font-size:13px">
+          دخولك تمام، بس أي حاجة تحفظها هتترفض وتختفي على طول.
+          عشان يشتغل، ضيف الرقم ده في عقدة <code>admins</code> في قاعدة البيانات:
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <code id="uidBox" style="background:#fff;border:1px solid var(--line);border-radius:8px;
+                padding:9px 13px;font-size:13px;user-select:all;direction:ltr">${esc(uid)}</code>
+          <button class="btn sm" id="copyUid">نسخ</button>
+        </div>
+        <details style="font-size:12.5px;line-height:1.9">
+          <summary style="cursor:pointer;font-weight:700;color:var(--danger)">الخطوات بالتفصيل</summary>
+          <div style="margin-top:8px">
+            ١. افتح
+            <a href="https://console.firebase.google.com/project/akhdar-89577/database/akhdar-89577-default-rtdb/data"
+               target="_blank" rel="noopener">Realtime Database ← Data</a><br>
+            ٢. اضغط <b>+</b> جنب اسم القاعدة، واكتب في الاسم <code>admins</code> وسيب القيمة فاضية<br>
+            ٣. اضغط <b>+</b> جنب <code>admins</code>، حط الرقم اللي فوق في الاسم و<code>true</code> في القيمة<br>
+            ٤. اضغط <b>Add</b>، وبعدين اعمل تحديث للصفحة دي
+          </div>
+        </details>
+      </div>
+    </div>`;
+  $('#copyUid').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(uid); toast('الرقم اتنسخ'); }
+    catch { toast('انسخه بإيدك من المربع', true); }
+  });
+}
+
 onAuthStateChanged(auth, (user) => {
   if (user){
     $('#login').style.display = 'none';
     $('#app').style.display = 'block';
     $('#who').textContent = user.email;
+    checkAdmin(user);
     startListeners();
   } else {
     $('#login').style.display = 'flex';
     $('#app').style.display = 'none';
+    $('#notAdmin').style.display = 'none';
   }
 });
 
@@ -634,22 +728,20 @@ function orderCard(o){
 }
 
 async function advance(id, to){
-  await update(ref(db, 'orders/' + id), {
+  await save(update(ref(db, 'orders/' + id), {
     status: to,
     [`statusHistory/${to}`]: Date.now(),
-  });
-  toast('الحالة اتحدّثت — العميل شافها');
+  }), 'الحالة اتحدّثت — العميل شافها');
 }
 
 async function cancelOrder(id){
   const reason = prompt('سبب الإلغاء (هيظهر للعميل):', '');
   if (reason === null) return;
-  await update(ref(db, 'orders/' + id), {
+  await save(update(ref(db, 'orders/' + id), {
     status: 'cancelled',
     cancelReason: reason,
     'statusHistory/cancelled': Date.now(),
-  });
-  toast('الطلب اتلغى');
+  }), 'الطلب اتلغى');
 }
 
 /* ══════════ الأصناف ══════════ */
@@ -719,13 +811,12 @@ function renderProducts(){
   $$('[data-edit]').forEach(b => b.addEventListener('click', () => productModal(b.dataset.edit)));
   $$('[data-toggle]').forEach(b => b.addEventListener('click', async () => {
     const p = state.products[b.dataset.toggle];
-    await update(ref(db, 'products/' + b.dataset.toggle), {available: p.available === false});
+    await save(update(ref(db, 'products/' + b.dataset.toggle), {available: p.available === false}));
   }));
   $$('[data-del]').forEach(b => b.addEventListener('click', async () => {
     const p = state.products[b.dataset.del];
     if (!confirm(`تحذف "${p.name}" نهائيًا؟\nلو الصنف خلص بس، استخدم زرار "خلص" أحسن.`)) return;
-    await remove(ref(db, 'products/' + b.dataset.del));
-    toast('الصنف اتحذف');
+    await save(remove(ref(db, 'products/' + b.dataset.del)), 'الصنف اتحذف');
   }));
 }
 
@@ -815,11 +906,11 @@ function productModal(id){
       updatedAt: Date.now(),
     };
 
-    if (id) await update(ref(db, 'products/' + id), data);
-    else    await push(ref(db, 'products'), data);
-
-    closeModal();
-    toast(id ? 'الصنف اتحدّث' : 'الصنف اتضاف');
+    const ok = await save(
+      id ? update(ref(db, 'products/' + id), data) : push(ref(db, 'products'), data),
+      id ? 'الصنف اتحدّث' : 'الصنف اتضاف');
+    // النافذة بتفضل مفتوحة لو الحفظ فشل، عشان الشغل ما يضيعش
+    if (ok) closeModal();
   });
 }
 
@@ -865,8 +956,7 @@ function renderCategories(){
     if (count > 0)
       return alert(`القسم ده فيه ${count} صنف.\nانقلهم لقسم تاني أو احذفهم الأول.`);
     if (!confirm('تحذف القسم ده؟')) return;
-    await remove(ref(db, 'categories/' + b.dataset.cdel));
-    toast('القسم اتحذف');
+    await save(remove(ref(db, 'categories/' + b.dataset.cdel)), 'القسم اتحذف');
   }));
 }
 
@@ -900,10 +990,10 @@ function categoryModal(id){
       sort: parseInt($('#cSort').value) || 0,
       active: $('#cActive').checked,
     };
-    if (id) await update(ref(db, 'categories/' + id), data);
-    else    await push(ref(db, 'categories'), data);
-    closeModal();
-    toast(id ? 'القسم اتحدّث' : 'القسم اتضاف');
+    const ok = await save(
+      id ? update(ref(db, 'categories/' + id), data) : push(ref(db, 'categories'), data),
+      id ? 'القسم اتحدّث' : 'القسم اتضاف');
+    if (ok) closeModal();
   });
 }
 
@@ -943,8 +1033,7 @@ function renderBanners(){
   $$('[data-bedit]').forEach(b => b.addEventListener('click', () => bannerModal(b.dataset.bedit)));
   $$('[data-bdel]').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('تحذف البانر ده؟')) return;
-    await remove(ref(db, 'banners/' + b.dataset.bdel));
-    toast('البانر اتحذف');
+    await save(remove(ref(db, 'banners/' + b.dataset.bdel)), 'البانر اتحذف');
   }));
 }
 
@@ -986,10 +1075,10 @@ function bannerModal(id){
       active: $('#bActive').checked,
     };
     if (!data.image && !data.title) return toast('محتاج صورة أو عنوان على الأقل');
-    if (id) await update(ref(db, 'banners/' + id), data);
-    else    await push(ref(db, 'banners'), data);
-    closeModal();
-    toast(id ? 'البانر اتحدّث' : 'البانر اتضاف');
+    const ok = await save(
+      id ? update(ref(db, 'banners/' + id), data) : push(ref(db, 'banners'), data),
+      id ? 'البانر اتحدّث' : 'البانر اتضاف');
+    if (ok) closeModal();
   });
 }
 
@@ -1027,8 +1116,7 @@ function renderCoupons(){
   $$('[data-kedit]').forEach(b => b.addEventListener('click', () => couponModal(b.dataset.kedit)));
   $$('[data-kdel]').forEach(b => b.addEventListener('click', async () => {
     if (!confirm('تحذف الكود ده؟')) return;
-    await remove(ref(db, 'coupons/' + b.dataset.kdel));
-    toast('الكود اتحذف');
+    await save(remove(ref(db, 'coupons/' + b.dataset.kdel)), 'الكود اتحذف');
   }));
 }
 
@@ -1077,13 +1165,12 @@ function couponModal(code){
       if (exists.exists()) return toast('الكود ده موجود بالفعل');
     }
 
-    await set(ref(db, 'coupons/' + key), {
+    const ok = await save(set(ref(db, 'coupons/' + key), {
       percent, amount,
       minOrder: parseFloat($('#kMin').value) || 0,
       active: $('#kActive').checked,
-    });
-    closeModal();
-    toast(code ? 'الكود اتحدّث' : 'الكود اتضاف');
+    }), code ? 'الكود اتحدّث' : 'الكود اتضاف');
+    if (ok) closeModal();
   });
 }
 
@@ -1107,7 +1194,7 @@ function renderSettings(){
 }
 
 $('#saveSettings').addEventListener('click', async () => {
-  await update(ref(db, 'settings'), {
+  await save(update(ref(db, 'settings'), {
     open: $('#stOpen').value === 'true',
     closedMessage: $('#stClosedMsg').value.trim() || 'المحل مقفول دلوقتي، اطلب في مواعيد العمل',
     currency: $('#stCurrency').value.trim() || 'ج.م',
@@ -1117,8 +1204,7 @@ $('#saveSettings').addEventListener('click', async () => {
     minOrder: parseFloat($('#stMin').value) || 0,
     workingHours: $('#stHours').value.trim(),
     announcement: $('#stAnnounce').value.trim(),
-  });
-  toast('الإعدادات اتحفظت');
+  }), 'الإعدادات اتحفظت');
 });
 </script>
 </body>
