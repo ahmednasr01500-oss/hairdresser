@@ -158,6 +158,7 @@
 
   <nav>
     <button data-tab="orders" class="on">الطلبات <span class="badge" id="pendingCount" style="display:none">0</span></button>
+    <button data-tab="customers">العملاء</button>
     <button data-tab="products">الأصناف</button>
     <button data-tab="categories">الأقسام</button>
     <button data-tab="banners">البانرات</button>
@@ -184,6 +185,22 @@
         <span id="ordStats" style="color:var(--muted);font-size:12.5px"></span>
       </div>
       <div id="ordersList"></div>
+    </section>
+
+    <!-- ── العملاء ── -->
+    <section class="tab" id="tab-customers">
+      <div class="toolbar">
+        <input id="custSearch" placeholder="ابحث بالاسم أو رقم التليفون…" style="min-width:250px">
+        <select id="custSort">
+          <option value="spent">الأكتر شرا</option>
+          <option value="orders">الأكتر طلبات</option>
+          <option value="recent">الأحدث تسجيلًا</option>
+          <option value="name">بالاسم</option>
+        </select>
+        <span class="spacer"></span>
+        <span id="custStats" style="color:var(--muted);font-size:12.5px"></span>
+      </div>
+      <div id="customersTable"></div>
     </section>
 
     <!-- ── الأصناف ── -->
@@ -372,6 +389,7 @@ const NEXT = {
 
 const state = {
   settings:{}, products:{}, categories:{}, banners:{}, coupons:{}, orders:{},
+  customers:{},
   knownOrders:new Set(), firstOrdersLoad:true,
 };
 
@@ -605,7 +623,8 @@ function startListeners(){
   onValue(ref(db, 'products'), s => { state.products = s.val() || {}; renderProducts(); });
   onValue(ref(db, 'banners'), s => { state.banners = s.val() || {}; renderBanners(); });
   onValue(ref(db, 'coupons'), s => { state.coupons = s.val() || {}; renderCoupons(); });
-  onValue(ref(db, 'orders'), s => { state.orders = s.val() || {}; onOrdersChanged(); });
+  onValue(ref(db, 'orders'), s => { state.orders = s.val() || {}; onOrdersChanged(); renderCustomers(); });
+  onValue(ref(db, 'customers'), s => { state.customers = s.val() || {}; renderCustomers(); });
 }
 
 /* ══════════ الطلبات ══════════ */
@@ -742,6 +761,105 @@ async function cancelOrder(id){
     cancelReason: reason,
     'statusHistory/cancelled': Date.now(),
   }), 'الطلب اتلغى');
+}
+
+/* ══════════ العملاء ══════════
+   العميل بيسجّل باسمه ورقمه من التطبيق، والعنوان بيتحفظ معاه. الجدول ده
+   بيجمع البيانات دي مع سجل طلباته عشان تعرف مين زبونك الدايم ومين
+   طلب مرة وغاب. */
+
+$('#custSearch').addEventListener('input', renderCustomers);
+$('#custSort').addEventListener('change', renderCustomers);
+
+/* إحصائيات كل عميل من الطلبات. المُلغى مش محسوب في الإنفاق. */
+function customerStats(uid){
+  let orders = 0, spent = 0, last = 0;
+  for (const o of Object.values(state.orders)) {
+    if (o.uid !== uid) continue;
+    orders++;
+    if (o.status !== 'cancelled') spent += Number(o.total || 0);
+    if ((o.createdAt || 0) > last) last = o.createdAt;
+  }
+  return {orders, spent, last};
+}
+
+function renderCustomers(){
+  const q = $('#custSearch').value.trim().toLowerCase();
+  const sort = $('#custSort').value;
+
+  let list = Object.entries(state.customers).map(([uid, c]) => {
+    const addresses = Object.values(c.addresses || {});
+    return {uid, ...c, addresses, ...customerStats(uid)};
+  });
+
+  if (q) {
+    list = list.filter(c =>
+      String(c.name || '').toLowerCase().includes(q) ||
+      String(c.phone || '').includes(q));
+  }
+
+  list.sort((a, b) => {
+    if (sort === 'orders') return b.orders - a.orders;
+    if (sort === 'recent') return (b.updatedAt || 0) - (a.updatedAt || 0);
+    if (sort === 'name')   return String(a.name).localeCompare(String(b.name), 'ar');
+    return b.spent - a.spent;
+  });
+
+  const total = Object.keys(state.customers).length;
+  const buyers = list.filter(c => c.orders > 0).length;
+  $('#custStats').textContent =
+    `${num(total)} عميل مسجّل • ${num(buyers)} منهم طلبوا فعلًا`;
+
+  if (!list.length){
+    $('#customersTable').innerHTML = total
+      ? '<div class="empty">مفيش عميل بالاسم أو الرقم ده</div>'
+      : '<div class="empty">لسه محدش سجّل في التطبيق.<br>العملاء بيظهروا هنا أول ما يسجّلوا 🌿</div>';
+    return;
+  }
+
+  $('#customersTable').innerHTML = `
+  <table>
+    <thead><tr>
+      <th>العميل</th><th>التليفون</th><th>العنوان</th>
+      <th>طلبات</th><th>إجمالي الشرا</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${list.map(c => {
+        const a = c.addresses[0];
+        const addrText = a
+          ? [a.street, a.area, a.city].filter(Boolean).join('، ')
+          : '—';
+        return `
+        <tr>
+          <td>
+            <b>${esc(c.name || 'بدون اسم')}</b>
+            ${c.orders >= 3 ? ' <span class="pill green">زبون دايم</span>' : ''}
+            ${c.updatedAt ? `<div style="color:var(--muted);font-size:11.5px;margin-top:3px">سجّل ${when(c.updatedAt)}</div>` : ''}
+          </td>
+          <td style="direction:ltr;text-align:right;white-space:nowrap">${esc(c.phone || '—')}</td>
+          <td style="max-width:280px">
+            <div style="font-size:12.5px;line-height:1.7">${esc(addrText)}</div>
+            ${a?.details ? `<div style="color:var(--muted);font-size:11.5px;margin-top:2px">${esc(a.details)}</div>` : ''}
+            ${c.addresses.length > 1 ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">+${c.addresses.length - 1} عنوان تاني</div>` : ''}
+          </td>
+          <td>${num(c.orders)}</td>
+          <td><b>${c.spent > 0 ? money(c.spent) : '—'}</b></td>
+          <td style="white-space:nowrap">
+            ${c.phone ? `<button class="btn ghost sm" data-ccall="${esc(c.phone)}">📞</button>` : ''}
+            ${c.phone ? `<button class="btn ghost sm" data-cwa="${esc(c.phone)}">واتساب</button>` : ''}
+            ${a?.lat ? `<button class="btn ghost sm" data-cmap="${a.lat},${a.lng}">🗺️</button>` : ''}
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+
+  $$('[data-ccall]').forEach(b => b.addEventListener('click',
+    () => location.href = 'tel:' + b.dataset.ccall));
+  $$('[data-cwa]').forEach(b => b.addEventListener('click',
+    () => window.open('https://wa.me/2' + b.dataset.cwa, '_blank')));
+  $$('[data-cmap]').forEach(b => b.addEventListener('click',
+    () => window.open(`https://www.google.com/maps?q=${b.dataset.cmap}`, '_blank')));
 }
 
 /* ══════════ الأصناف ══════════ */
