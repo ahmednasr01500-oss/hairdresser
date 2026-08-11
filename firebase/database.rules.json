@@ -75,30 +75,39 @@
     },
 
     // ── الطلبات ──────────────────────────────────────────────────────
-    // صاحب المحل بس اللي يقدر يقرأ القايمة كلها.
+    // ملكية الطلب على رقم تليفون العميل مش على معرّف الجهاز، عشان بياناته
+    // ما تضيعش لو مسح التطبيق ونزّله تاني.
+    //
+    // النتيجة المقصودة والمتوافق عليها: أي حد مسجّل في التطبيق ويكتب رقم
+    // حد تاني هيشوف طلباته. الرقم هنا وسيلة تعريف مش إثبات هوية — الإثبات
+    // محتاج كود تحقق بالرسايل وده مدفوع.
+    //
+    // اللي القواعد لسه بتمنعه: قراءة قايمة الطلبات كلها، وتعديل مبلغ أو
+    // وقت طلب موجود، ونقل طلب من رقم لرقم.
     "orders": {
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$orderId": {
-        ".read": "auth != null && (data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
-        ".validate": "newData.hasChildren(['uid', 'status', 'createdAt', 'total'])"
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || root.child('admins').child(auth.uid).val() === true || (newData.child('phone').val() === data.child('phone').val() && newData.child('total').val() === data.child('total').val() && newData.child('createdAt').val() === data.child('createdAt').val()))",
+        ".validate": "newData.hasChildren(['phone', 'status', 'createdAt', 'total'])"
       }
     },
 
-    // فهرس طلبات كل عميل — عشان يجيب طلباته من غير ما يقرأ طلبات غيره.
+    // فهرس طلبات كل رقم.
     "user_orders": {
-      "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": "auth != null && auth.uid === $uid"
+      "$phone": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     },
 
-    // بيانات العميل وعناوينه — نسخة عند صاحب المحل عشان يقدر يتواصل معاه.
+    // ملف العميل: اسمه وعناوينه، متخزّن على رقمه عشان يرجعله بعد إعادة
+    // التركيب. قايمة العملاء كلها لصاحب المحل بس.
     "customers": {
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
-      "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": "auth != null && auth.uid === $uid"
+      "$phone": {
+        ".read": "auth != null",
+        ".write": "auth != null"
       }
     }
   }

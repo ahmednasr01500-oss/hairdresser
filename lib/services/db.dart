@@ -21,8 +21,10 @@ class Db {
   DatabaseReference get bannersRef => _root.child('banners');
   DatabaseReference get couponsRef => _root.child('coupons');
   DatabaseReference get ordersRef => _root.child('orders');
-  DatabaseReference customerRef(String uid) => _root.child('customers/$uid');
-  DatabaseReference userOrdersRef(String uid) => _root.child('user_orders/$uid');
+  /// [key] هو رقم تليفون العميل بأرقام بس — مش معرّف الجهاز. كده بياناته
+  /// وطلباته بتفضل معاه حتى لو مسح التطبيق ونزّله تاني.
+  DatabaseReference customerRef(String key) => _root.child('customers/$key');
+  DatabaseReference userOrdersRef(String key) => _root.child('user_orders/$key');
 
   /// خلي الكتالوج والإعدادات متخزّنين على الجهاز عشان التطبيق يفتح
   /// بمحتوى حتى لو النت ضعيف أو مقطوع.
@@ -84,10 +86,10 @@ class Db {
 
   // ── طلبات العميل ─────────────────────────────────────────────────────────
 
-  /// بنقرأ طلبات العميل من فهرس `user_orders/{uid}` وبعدين نجيب كل طلب
+  /// بنقرأ طلبات العميل من فهرس `user_orders/{phone}` وبعدين نجيب كل طلب
   /// بمفتاحه — كده العميل مش محتاج صلاحية قراءة على كل الطلبات.
-  Stream<List<ShopOrder>> myOrders(String uid) {
-    return userOrdersRef(uid).onValue.asyncMap((event) async {
+  Stream<List<ShopOrder>> myOrders(String key) {
+    return userOrdersRef(key).onValue.asyncMap((event) async {
       final ids = asMap(event.snapshot.value).keys.toList();
       final orders = await Future.wait(ids.map((id) async {
         final s = await ordersRef.child(id).get();
@@ -123,6 +125,7 @@ class Db {
 
   Future<String> placeOrder({
     required String uid,
+    required String customerKey,
     required List<CartItem> items,
     required Address address,
     required String customerName,
@@ -142,6 +145,9 @@ class Db {
 
     await ref.set({
       'number': number,
+      // `phone` هو صاحب الطلب — عليه بيتبني الفهرس وقواعد الأمان.
+      // `uid` معرّف الجهاز، محفوظ للمراجعة بس.
+      'phone': customerKey,
       'uid': uid,
       'status': OrderStatus.pending.key,
       'createdAt': now,
@@ -161,7 +167,7 @@ class Db {
       'address': address.toMap(),
     });
 
-    await userOrdersRef(uid).child(id).set(now);
+    await userOrdersRef(customerKey).child(id).set(now);
     return id;
   }
 
@@ -176,20 +182,32 @@ class Db {
 
   // ── ملف العميل ───────────────────────────────────────────────────────────
 
-  /// نسخة من بيانات العميل عند صاحب المحل عشان يقدر يتواصل معاه.
-  /// المصدر الأساسي للبيانات دي عند العميل نفسه على الجهاز.
+  /// ملف العميل: بياناته وعناوينه، متخزّن على رقم تليفونه.
+  ///
+  /// ده مش مجرد نسخة لصاحب المحل — ده المصدر اللي بيرجّع للعميل بياناته
+  /// لو غيّر الموبايل أو مسح التطبيق.
   Future<void> saveCustomer({
-    required String uid,
+    required String key,
     required String name,
     required String phone,
     List<Address> addresses = const [],
   }) async {
-    await customerRef(uid).update({
+    await customerRef(key).update({
       'name': name,
       'phone': phone,
       'updatedAt': DateTime.now().millisecondsSinceEpoch,
       if (addresses.isNotEmpty)
         'addresses': {for (final a in addresses) a.id: a.toMap()},
     });
+  }
+
+  /// بنستبدل قايمة العناوين بالكامل — بنستخدمها بعد الحذف، لأن `update`
+  /// بيدمج ومش بيشيل اللي اتشال.
+  Future<void> replaceAddresses(String key, List<Address> addresses) async {
+    await customerRef(key).child('addresses').set(
+          addresses.isEmpty
+              ? null
+              : {for (final a in addresses) a.id: a.toMap()},
+        );
   }
 }

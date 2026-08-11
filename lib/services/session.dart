@@ -9,9 +9,19 @@ import 'db.dart';
 
 /// بيانات العميل وعناوينه.
 ///
-/// الدخول بالاسم والرقم بس — من غير كود تحقق. تحت السطح بنعمل تسجيل دخول
-/// مجهول في Firebase عشان يبقى فيه uid ثابت نربط بيه الطلبات، وعشان قواعد
-/// الأمان تقدر تمنع أي حد من قراءة طلبات حد تاني.
+/// الدخول بالاسم والرقم بس — من غير كود تحقق.
+///
+/// **هوية العميل هي رقم تليفونه، مش الجهاز.** الأول كنا بنربط الطلبات
+/// بمعرّف مجهول بيتولّد على الجهاز، فلما العميل كان يمسح التطبيق وينزله
+/// تاني كان بيضيع منه كل حاجة. دلوقتي كل حاجة متعلّقة بالرقم، فأول ما
+/// يكتبه بيرجعله اسمه وعناوينه وطلباته من السيرفر.
+///
+/// المقايضة اللي اتوافق عليها: مفيش كود تحقق، يعني اللي يكتب رقم حد
+/// تاني هيشوف طلباته وعنوانه. الحل الآمن ده محتاج رسايل SMS مدفوعة.
+/// لو اتفعّلت بعدين، التغيير هيبقى في الملف ده وفي قواعد الأمان بس.
+///
+/// الدخول المجهول في Firebase لسه موجود — بس دوره بقى إثبات إن الطلب
+/// جاي من التطبيق مش من أي حد على النت.
 class Session extends ChangeNotifier {
   Session._();
   static final Session i = Session._();
@@ -34,6 +44,12 @@ class Session extends ChangeNotifier {
   String get phone => _phone;
   String get uid => _uid;
   List<Address> get addresses => List.unmodifiable(_addresses);
+
+  /// المفتاح اللي بتتخزّن بيه بيانات العميل وطلباته في قاعدة البيانات.
+  /// أرقام بس — عشان "0103 254 7745" و"01032547745" يبقوا نفس العميل.
+  String get customerKey => normalizePhone(_phone);
+
+  static String normalizePhone(String raw) => raw.replaceAll(RegExp(r'\D'), '');
 
   bool get isLoggedIn => _phone.isNotEmpty && _uid.isNotEmpty;
   bool get hasAddress => _addresses.isNotEmpty;
@@ -105,16 +121,61 @@ class Session extends ChangeNotifier {
     }
     await _prefs?.setString(_kName, _name);
     await _prefs?.setString(_kPhone, _phone);
+
+    // العميل اللي طلب من قبل بنفس الرقم: بنرجّعله عناوينه من السيرفر
+    // بدل ما يكتبها من الأول بعد كل إعادة تركيب.
+    final restored = await _restoreFromServer();
     notifyListeners();
-    _syncToServer();
+    if (!restored) _syncToServer();
     return true;
   }
 
+  /// بنقرأ ملف العميل المحفوظ على رقمه ونرجّع منه العناوين (والاسم لو
+  /// العميل ساب الخانة فاضية). بترجّع `true` لو لقينا حاجة فعلًا.
+  Future<bool> _restoreFromServer() async {
+    final key = customerKey;
+    if (key.isEmpty) return false;
+    try {
+      final snap = await Db.i.customerRef(key).get();
+      if (!snap.exists) return false;
+      final m = asMap(snap.value);
+
+      final serverName = (m['name'] ?? '').toString().trim();
+      if (_name.isEmpty && serverName.isNotEmpty) _name = serverName;
+
+      final serverAddresses = asMap(m['addresses'])
+          .values
+          .map((v) => Address.fromMap(asMap(v)))
+          .where((a) => a.id.isNotEmpty)
+          .toList();
+
+      if (serverAddresses.isNotEmpty) {
+        // بندمج: اللي على الجهاز له الأولوية، وبنضيف اللي على السيرفر بس.
+        final have = _addresses.map((a) => a.id).toSet();
+        _addresses.addAll(serverAddresses.where((a) => !have.contains(a.id)));
+        if (_selectedAddressId.isEmpty) _selectedAddressId = _addresses.first.id;
+        await _persistAddresses();
+      }
+
+      await _prefs?.setString(_kName, _name);
+      return true;
+    } catch (e) {
+      // فشل الاسترجاع مش سبب يمنع الدخول — العميل يكتب عنوانه عادي.
+      debugPrint('restore failed: $e');
+      return false;
+    }
+  }
+
   Future<void> updateProfile({String? name, String? phone}) async {
+    final oldKey = customerKey;
     if (name != null) _name = name.trim();
     if (phone != null) _phone = phone.trim();
     await _prefs?.setString(_kName, _name);
     await _prefs?.setString(_kPhone, _phone);
+
+    // غيّر رقمه؟ يبقى بقى عميل تاني — نجيب بياناته المحفوظة على الرقم الجديد.
+    if (customerKey != oldKey) await _restoreFromServer();
+
     notifyListeners();
     _syncToServer();
   }
@@ -155,6 +216,10 @@ class Session extends ChangeNotifier {
     }
     await _persistAddresses();
     notifyListeners();
+    // لازم يتشال من السيرفر كمان، وإلا هيرجع تاني مع أول استرجاع.
+    Db.i
+        .replaceAddresses(customerKey, _addresses)
+        .catchError((e) => debugPrint('address delete sync failed: $e'));
   }
 
   Future<void> selectAddress(String id) async {
@@ -189,10 +254,10 @@ class Session extends ChangeNotifier {
   /// مزامنة صامتة — لو النت مقطوع مش هنزعّج العميل برسالة خطأ، الطلب
   /// نفسه بيتبعت معاه كل البيانات المطلوبة على أي حال.
   void _syncToServer() {
-    if (_uid.isEmpty || _phone.isEmpty) return;
+    if (_uid.isEmpty || customerKey.isEmpty) return;
     Db.i
         .saveCustomer(
-          uid: _uid,
+          key: customerKey,
           name: _name,
           phone: _phone,
           addresses: _addresses,

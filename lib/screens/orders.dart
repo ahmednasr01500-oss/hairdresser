@@ -33,7 +33,7 @@ class OrdersScreen extends StatelessWidget {
           }
 
           return StreamBuilder<List<ShopOrder>>(
-            stream: Db.i.myOrders(Session.i.uid),
+            stream: Db.i.myOrders(Session.i.customerKey),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
                 return const Center(

@@ -78,6 +78,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final orderId = await Db.i.placeOrder(
         uid: session.uid,
+        customerKey: session.customerKey,
         items: Cart.i.items,
         address: finalAddress,
         customerName: session.name,
