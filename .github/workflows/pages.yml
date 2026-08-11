@@ -1,0 +1,43 @@
+# نشر صفحة التحميل ولوحة التحكم على GitHub Pages.
+#
+# بيشتغل لوحده مع كل تعديل على مجلد hosting/. ملف الـ APK نفسه مش هنا —
+# هو متعلّق على صفحة الإصدارات (Releases) عشان ما يكبّرش المستودع،
+# وصفحة التحميل بتوصّل ليه من هناك.
+
+name: نشر على GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hosting/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# نشرة واحدة في المرة، ومنلغيش نشرة شغّالة عشان الموقع ما يقعش في النص.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: hosting
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

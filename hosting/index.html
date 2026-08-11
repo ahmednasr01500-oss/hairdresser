@@ -141,8 +141,15 @@
 </footer>
 
 <script>
-/* اسم ملف الـ APK. لو غيّرته وقت النشر، غيّره هنا كمان. */
-const APK = 'akhdar.apk';
+/* مصدر ملف التطبيق.
+ *
+ * الصفحة دي بتتنشر في مكانين: Firebase Hosting (وفيه الـ APK جنبها)
+ * و GitHub Pages (ومفيهوش، لأن ملف ٢٤ ميجا مش بيتحط في المستودع).
+ * عشان كده بنجرّب الملف المحلي الأول، ولو مش موجود بنروح لأحدث إصدار
+ * على GitHub. الرابط ده بيوصّل دايمًا لآخر نسخة من غير ما نعدّله. */
+const APK_LOCAL = 'akhdar.apk';
+const APK_RELEASE =
+  'https://github.com/ahmednasr01500-oss/hairdresser/releases/latest/download/akhdar.apk';
 
 const ua = navigator.userAgent || '';
 const isIOS = /iPad|iPhone|iPod/.test(ua) ||
@@ -163,10 +170,10 @@ document.getElementById('downloadCard').innerHTML = isIOS ? `
   </a>
 ` : `
   <h2>⬇️ حمّل التطبيق</h2>
-  <a class="btn" href="${APK}" download>
+  <a class="btn" id="dlBtn" href="${APK_RELEASE}" download>
     🤖 تحميل لأجهزة أندرويد
   </a>
-  <div class="size" id="apkSize">&nbsp;</div>
+  <div class="size" id="apkSize">حجم الملف حوالي ٢٤ ميجا</div>
   <ol class="steps">
     <li>اضغط زرار التحميل فوق واستنى الملف يخلص.</li>
     <li>افتح الملف من الإشعارات أو من مجلد التنزيلات.</li>
@@ -180,16 +187,22 @@ document.getElementById('downloadCard').innerHTML = isIOS ? `
   </div>
 `;
 
-/* حجم الملف بيتقري من الملف نفسه بدل ما يتكتب بالإيد ويبقى قديم بعد كل نشرة. */
+/* لو الصفحة متنشرة جنب ملف الـ APK (Firebase Hosting)، نفضّل الملف
+ * المحلي — أسرع للزبون ومش بيخرج بره الموقع. ونجيب الحجم الحقيقي منه
+ * بدل الرقم المكتوب في الـ HTML. */
 if (!isIOS) {
-  fetch(APK, { method: 'HEAD' })
+  fetch(APK_LOCAL, { method: 'HEAD' })
     .then(r => {
+      if (!r.ok) throw new Error('not here');
+      document.getElementById('dlBtn').href = APK_LOCAL;
       const bytes = Number(r.headers.get('content-length'));
-      if (!bytes) throw new Error('no size');
-      const mb = (bytes / 1048576).toFixed(0);
-      document.getElementById('apkSize').textContent = `حجم الملف حوالي ${mb} ميجا`;
+      if (bytes) {
+        const mb = (bytes / 1048576).toFixed(0);
+        document.getElementById('apkSize').textContent =
+          `حجم الملف حوالي ${mb} ميجا`;
+      }
     })
-    // لو مقدرناش نجيب الحجم، السطر بيفضل فاضي — أهون من رقم غلط.
+    // مفيش ملف محلي — الزرار يفضل على إصدار GitHub زي ما هو في الـ HTML.
     .catch(() => {});
 }
 </script>
