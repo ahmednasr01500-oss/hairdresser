@@ -1,0 +1,130 @@
+{
+  "//": "بيانات بداية عشان التطبيق ما يفتحش فاضي. الأسعار هنا أرقام مبدئية للتجربة — غيّرها من لوحة التحكم بأسعار المحل الحقيقية. الصور سايباها فاضية عشان ترفعها بنفسك من اللوحة. طريقة الاستيراد في SETUP.md خطوة (٥).",
+
+  "settings": {
+    "currency": "ج.م",
+    "open": true,
+    "closedMessage": "المحل مقفول دلوقتي، اطلب في مواعيد العمل",
+    "workingHours": "يوميًا من ٩ ص إلى ١٢ م",
+    "deliveryEtaMinutes": "٣٠ - ٤٥ دقيقة",
+    "deliveryFee": 15,
+    "freeDeliveryOver": 200,
+    "minOrder": 50,
+    "announcement": ""
+  },
+
+  "categories": {
+    "cat_vegetables": { "name": "الخضروات", "sort": 1, "active": true, "image": "" },
+    "cat_fruits":     { "name": "الفاكهة",   "sort": 2, "active": true, "image": "" },
+    "cat_leafy":      { "name": "الورقيات",  "sort": 3, "active": true, "image": "" },
+    "cat_herbs":      { "name": "الخضرة والتوابل", "sort": 4, "active": true, "image": "" }
+  },
+
+  "products": {
+    "p_tomato": {
+      "name": "طماطم", "categoryId": "cat_vegetables", "price": 20, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["ثمار"], "available": true, "featured": true,
+      "sort": 1, "rating": 4.8, "image": "",
+      "description": "طماطم طازجة ومختارة بعناية من أفضل المزارع."
+    },
+    "p_cucumber": {
+      "name": "خيار", "categoryId": "cat_vegetables", "price": 18, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["ثمار"], "available": true, "featured": false,
+      "sort": 2, "image": "", "description": ""
+    },
+    "p_pepper": {
+      "name": "فلفل رومي", "categoryId": "cat_vegetables", "price": 25, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["ثمار"], "available": true, "featured": false,
+      "sort": 3, "image": "", "description": ""
+    },
+    "p_zucchini": {
+      "name": "كوسة", "categoryId": "cat_vegetables", "price": 22, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["ثمار"], "available": true, "featured": false,
+      "sort": 4, "image": "", "description": ""
+    },
+    "p_carrot": {
+      "name": "جزر", "categoryId": "cat_vegetables", "price": 16, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["جذور"], "available": true, "featured": false,
+      "sort": 5, "image": "", "description": ""
+    },
+    "p_eggplant": {
+      "name": "باذنجان", "categoryId": "cat_vegetables", "price": 17, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["ثمار"], "available": true, "featured": false,
+      "sort": 6, "image": "", "description": ""
+    },
+    "p_potato": {
+      "name": "بطاطس", "categoryId": "cat_vegetables", "price": 14, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["جذور"], "available": true, "featured": false,
+      "sort": 7, "image": "", "description": ""
+    },
+    "p_onion": {
+      "name": "بصل", "categoryId": "cat_vegetables", "price": 13, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["جذور"], "available": true, "featured": false,
+      "sort": 8, "image": "", "description": ""
+    },
+
+    "p_banana": {
+      "name": "موز", "categoryId": "cat_fruits", "price": 30, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": [], "available": true, "featured": true,
+      "sort": 1, "image": "", "description": ""
+    },
+    "p_apple_red": {
+      "name": "تفاح أحمر", "categoryId": "cat_fruits", "price": 55, "oldPrice": 65,
+      "unit": "كجم", "step": 1, "tags": [], "available": true, "featured": true,
+      "sort": 2, "image": "", "description": "تفاح أحمر مستورد، حلو ومقرمش."
+    },
+    "p_orange": {
+      "name": "برتقال", "categoryId": "cat_fruits", "price": 24, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": ["موالح"], "available": true, "featured": false,
+      "sort": 3, "image": "", "description": ""
+    },
+    "p_grapes": {
+      "name": "عنب", "categoryId": "cat_fruits", "price": 45, "oldPrice": 0,
+      "unit": "كجم", "step": 1, "tags": [], "available": true, "featured": false,
+      "sort": 4, "image": "", "description": ""
+    },
+    "p_lemon": {
+      "name": "ليمون", "categoryId": "cat_fruits", "price": 28, "oldPrice": 0,
+      "unit": "كجم", "step": 0.5, "tags": ["موالح"], "available": true, "featured": false,
+      "sort": 5, "image": "", "description": ""
+    },
+
+    "p_lettuce": {
+      "name": "خس", "categoryId": "cat_leafy", "price": 12, "oldPrice": 0,
+      "unit": "قطعة", "step": 1, "tags": ["ورقيات"], "available": true, "featured": false,
+      "sort": 1, "image": "", "description": ""
+    },
+    "p_spinach": {
+      "name": "سبانخ", "categoryId": "cat_leafy", "price": 10, "oldPrice": 0,
+      "unit": "حزمة", "step": 1, "tags": ["ورقيات"], "available": true, "featured": false,
+      "sort": 2, "image": "", "description": ""
+    },
+    "p_arugula": {
+      "name": "جرجير", "categoryId": "cat_leafy", "price": 5, "oldPrice": 0,
+      "unit": "حزمة", "step": 1, "tags": ["ورقيات"], "available": true, "featured": false,
+      "sort": 3, "image": "", "description": ""
+    },
+
+    "p_parsley": {
+      "name": "بقدونس", "categoryId": "cat_herbs", "price": 5, "oldPrice": 0,
+      "unit": "حزمة", "step": 1, "tags": [], "available": true, "featured": false,
+      "sort": 1, "image": "", "description": ""
+    },
+    "p_coriander": {
+      "name": "كزبرة خضراء", "categoryId": "cat_herbs", "price": 5, "oldPrice": 0,
+      "unit": "حزمة", "step": 1, "tags": [], "available": true, "featured": false,
+      "sort": 2, "image": "", "description": ""
+    },
+    "p_dill": {
+      "name": "شبت", "categoryId": "cat_herbs", "price": 5, "oldPrice": 0,
+      "unit": "حزمة", "step": 1, "tags": [], "available": true, "featured": false,
+      "sort": 3, "image": "", "description": ""
+    }
+  },
+
+  "coupons": {
+    "AKHDAR10": { "percent": 10, "amount": 0, "minOrder": 100, "active": true }
+  },
+
+  "counters": { "orderNumber": 1000 }
+}

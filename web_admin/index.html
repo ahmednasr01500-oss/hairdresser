@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>أخضر — لوحة التحكم</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --green:#1F7A3B; --green-d:#145C2B; --leaf:#8CC63F;
+    --bg:#F4FAF3; --card:#fff; --text:#1B2B22; --muted:#7B8C81;
+    --line:#E6EFE7; --danger:#D1493F; --warn:#E0A02A; --blue:#2D8CD8;
+    --r:14px; --shadow:0 4px 16px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Cairo,system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  button,input,select,textarea{font-family:inherit;font-size:14px}
+  a{color:var(--green)}
+
+  /* ── شاشة الدخول ─────────────────────────────────────────────── */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  #login .box{background:#fff;border-radius:20px;box-shadow:var(--shadow);padding:36px;width:100%;max-width:400px}
+  #login h1{margin:0 0 4px;font-size:26px;color:var(--green)}
+  #login p{margin:0 0 26px;color:var(--muted);font-size:13px}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-weight:700;font-size:12.5px;margin-bottom:6px}
+  .field input,.field select,.field textarea{
+    width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;
+    background:#F7FAF7;outline:none;transition:border-color .15s
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green)}
+  .field .hint{color:var(--muted);font-size:11.5px;margin-top:5px;line-height:1.6}
+
+  .btn{background:var(--green);color:#fff;border:0;border-radius:10px;padding:12px 20px;
+    font-weight:700;cursor:pointer;transition:filter .15s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--text);border:1px solid var(--line)}
+  .btn.danger{background:var(--danger)}
+  .btn.sm{padding:7px 13px;font-size:12.5px;border-radius:8px}
+  .btn.block{width:100%}
+
+  /* ── الهيكل ──────────────────────────────────────────────────── */
+  #app{display:none;min-height:100vh}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:12px 20px;
+    display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50;flex-wrap:wrap}
+  header .brand{font-weight:900;font-size:19px;color:var(--green)}
+  header .spacer{flex:1}
+  .switch{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+  .switch input{width:16px;height:16px;accent-color:var(--green)}
+
+  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 12px;display:flex;gap:2px;
+    overflow-x:auto;position:sticky;top:57px;z-index:49}
+  nav button{background:0;border:0;padding:13px 16px;cursor:pointer;color:var(--muted);
+    font-weight:700;border-bottom:3px solid transparent;white-space:nowrap}
+  nav button.on{color:var(--green);border-bottom-color:var(--green)}
+  nav .badge{background:var(--danger);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-inline-start:5px}
+
+  main{padding:20px;max-width:1200px;margin:0 auto}
+  .tab{display:none}
+  .tab.on{display:block}
+
+  .card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+  .card h3{margin:0 0 14px;font-size:15px}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .toolbar input,.toolbar select{padding:10px 13px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .toolbar .spacer{flex:1}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+  th,td{padding:11px 12px;text-align:right;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{background:#F7FAF7;font-size:12.5px;color:var(--muted);font-weight:700}
+  tr:last-child td{border-bottom:0}
+  td img{width:44px;height:44px;object-fit:contain;border-radius:8px;background:#F2F6F2}
+
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .pill.green{background:rgba(31,122,59,.12);color:var(--green)}
+  .pill.warn{background:rgba(224,160,42,.15);color:#9a6c10}
+  .pill.blue{background:rgba(45,140,216,.14);color:var(--blue)}
+  .pill.grey{background:#EEF2EE;color:var(--muted)}
+  .pill.red{background:rgba(209,73,63,.13);color:var(--danger)}
+
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;line-height:1.9}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+
+  /* ── نافذة ───────────────────────────────────────────────────── */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;
+    align-items:flex-start;justify-content:center;padding:20px;z-index:100;overflow-y:auto}
+  .modal.on{display:flex}
+  .modal .inner{background:#fff;border-radius:18px;padding:24px;width:100%;max-width:560px;margin:auto}
+  .modal h3{margin:0 0 18px;font-size:17px}
+  .modal .actions{display:flex;gap:10px;justify-content:flex-start;margin-top:20px}
+
+  .thumb{width:88px;height:88px;object-fit:contain;border-radius:10px;background:#F2F6F2;border:1px solid var(--line)}
+
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--green-d);
+    color:#fff;padding:12px 22px;border-radius:12px;font-weight:700;z-index:200;display:none;box-shadow:var(--shadow)}
+
+  .ordercard{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:16px;margin-bottom:12px;
+    border-inline-start:5px solid var(--line)}
+  .ordercard.pending{border-inline-start-color:var(--warn);background:#FFFDF6}
+  .ordercard.on_way{border-inline-start-color:var(--blue)}
+  .ordercard.delivered{border-inline-start-color:var(--green)}
+  .ordercard.cancelled{border-inline-start-color:var(--muted);opacity:.7}
+  .ordercard .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .ordercard .num{font-weight:900;font-size:16px}
+  .ordercard .lines{background:#F7FAF7;border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px;line-height:2}
+  .ordercard .meta{color:var(--muted);font-size:12.5px;line-height:1.9}
+  .ordercard .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .total{font-weight:900;font-size:17px;color:var(--green)}
+
+  @media print{
+    header,nav,.toolbar,.acts,#toast{display:none!important}
+    .ordercard{box-shadow:none;border:1px solid #ccc;page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ الدخول ═══ -->
+<div id="login">
+  <div class="box">
+    <h1>أخضر 🌿</h1>
+    <p>لوحة تحكم صاحب المحل</p>
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input id="lgEmail" type="email" autocomplete="username" placeholder="admin@akhdar.com">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <div id="lgErr" style="color:var(--danger);font-size:12.5px;margin:6px 0 14px;min-height:18px"></div>
+    <button class="btn block" id="lgBtn">دخول</button>
+  </div>
+</div>
+
+<!-- ═══ اللوحة ═══ -->
+<div id="app">
+  <header>
+    <span class="brand">أخضر 🌿</span>
+    <span id="shopState"></span>
+    <span class="spacer"></span>
+    <label class="switch" title="صوت تنبيه عند وصول طلب جديد">
+      <input type="checkbox" id="soundOn" checked> تنبيه صوتي
+    </label>
+    <span id="who" style="color:var(--muted);font-size:12.5px"></span>
+    <button class="btn ghost sm" id="logout">خروج</button>
+  </header>
+
+  <nav>
+    <button data-tab="orders" class="on">الطلبات <span class="badge" id="pendingCount" style="display:none">0</span></button>
+    <button data-tab="products">الأصناف</button>
+    <button data-tab="categories">الأقسام</button>
+    <button data-tab="banners">البانرات</button>
+    <button data-tab="coupons">أكواد الخصم</button>
+    <button data-tab="settings">الإعدادات</button>
+  </nav>
+
+  <main>
+    <!-- ── الطلبات ── -->
+    <section class="tab on" id="tab-orders">
+      <div class="toolbar">
+        <select id="ordFilter">
+          <option value="active">الطلبات الشغّالة</option>
+          <option value="all">الكل</option>
+          <option value="pending">قيد المراجعة</option>
+          <option value="confirmed">تم التأكيد</option>
+          <option value="preparing">بيتجهّز</option>
+          <option value="on_way">في الطريق</option>
+          <option value="delivered">تم التسليم</option>
+          <option value="cancelled">ملغي</option>
+        </select>
+        <input id="ordSearch" placeholder="ابحث برقم الطلب أو التليفون…" style="min-width:230px">
+        <span class="spacer"></span>
+        <span id="ordStats" style="color:var(--muted);font-size:12.5px"></span>
+      </div>
+      <div id="ordersList"></div>
+    </section>
+
+    <!-- ── الأصناف ── -->
+    <section class="tab" id="tab-products">
+      <div class="toolbar">
+        <button class="btn" id="addProduct">+ صنف جديد</button>
+        <select id="prodCat"><option value="">كل الأقسام</option></select>
+        <input id="prodSearch" placeholder="ابحث باسم الصنف…">
+        <span class="spacer"></span>
+        <span id="prodStats" style="color:var(--muted);font-size:12.5px"></span>
+      </div>
+      <div id="productsTable"></div>
+    </section>
+
+    <!-- ── الأقسام ── -->
+    <section class="tab" id="tab-categories">
+      <div class="toolbar">
+        <button class="btn" id="addCategory">+ قسم جديد</button>
+      </div>
+      <div id="categoriesTable"></div>
+    </section>
+
+    <!-- ── البانرات ── -->
+    <section class="tab" id="tab-banners">
+      <div class="toolbar">
+        <button class="btn" id="addBanner">+ بانر جديد</button>
+        <span style="color:var(--muted);font-size:12.5px">البانرات بتظهر فوق الشاشة الرئيسية في التطبيق</span>
+      </div>
+      <div id="bannersTable"></div>
+    </section>
+
+    <!-- ── الكوبونات ── -->
+    <section class="tab" id="tab-coupons">
+      <div class="toolbar">
+        <button class="btn" id="addCoupon">+ كود خصم جديد</button>
+      </div>
+      <div id="couponsTable"></div>
+    </section>
+
+    <!-- ── الإعدادات ── -->
+    <section class="tab" id="tab-settings">
+      <div class="card" style="max-width:640px">
+        <h3>إعدادات المحل</h3>
+        <div class="field">
+          <label>حالة المحل</label>
+          <select id="stOpen">
+            <option value="true">مفتوح — بيستقبل طلبات</option>
+            <option value="false">مقفول — مش بيستقبل طلبات</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>رسالة القفل</label>
+          <input id="stClosedMsg" placeholder="المحل مقفول دلوقتي، اطلب في مواعيد العمل">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>العملة</label>
+            <input id="stCurrency" placeholder="ج.م">
+          </div>
+          <div class="field">
+            <label>وقت التوصيل المتوقع</label>
+            <input id="stEta" placeholder="٣٠ - ٤٥ دقيقة">
+          </div>
+          <div class="field">
+            <label>رسوم التوصيل</label>
+            <input id="stFee" type="number" step="0.5" min="0" placeholder="0">
+          </div>
+          <div class="field">
+            <label>توصيل مجاني فوق</label>
+            <input id="stFree" type="number" step="1" min="0" placeholder="0">
+            <div class="hint">صفر = التوصيل مدفوع دايمًا</div>
+          </div>
+          <div class="field">
+            <label>الحد الأدنى للطلب</label>
+            <input id="stMin" type="number" step="1" min="0" placeholder="0">
+            <div class="hint">صفر = مفيش حد أدنى</div>
+          </div>
+          <div class="field">
+            <label>مواعيد العمل</label>
+            <input id="stHours" placeholder="يوميًا من ٩ ص إلى ١٢ م">
+          </div>
+        </div>
+        <div class="field">
+          <label>إعلان يظهر للعملاء (اختياري)</label>
+          <input id="stAnnounce" placeholder="مثال: عرض الجمعة — خصم ١٥٪ على الفاكهة">
+          <div class="hint">سيبه فاضي عشان الشريط ما يظهرش</div>
+        </div>
+        <button class="btn" id="saveSettings">حفظ الإعدادات</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ═══ النوافذ ═══ -->
+<div class="modal" id="modal"><div class="inner" id="modalInner"></div></div>
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+import {
+  getDatabase, ref, onValue, set, update, remove, push, get
+} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDP2O_p8w4iRvMFU_RQ8l4aaszT4DJ4AiA",
+  authDomain: "hairdresser-d6d24.firebaseapp.com",
+  databaseURL: "https://hairdresser-d6d24-default-rtdb.firebaseio.com",
+  projectId: "hairdresser-d6d24",
+  storageBucket: "hairdresser-d6d24.firebasestorage.app",
+  messagingSenderId: "8571108114",
+  appId: "1:8571108114:web:a99de2aa857603ed57d1cb"
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getDatabase(app);
+
+/* ══════════ أدوات مساعدة ══════════ */
+
+const $  = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.style.display = 'none', 2600);
+}
+
+const money = (v) => `${Number(v || 0).toFixed(2)} ${state.settings.currency || 'ج.م'}`;
+const num   = (v) => `${Number(v || 0).toLocaleString('en')}`;
+
+function when(ms){
+  if (!ms) return '';
+  const d = new Date(ms), now = new Date();
+  const time = d.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'});
+  if (d.toDateString() === now.toDateString()) return `النهاردة ${time}`;
+  return `${d.toLocaleDateString('ar-EG', {day:'numeric', month:'long'})} — ${time}`;
+}
+
+/* الحالات — لازم تفضل مطابقة للـ enum في التطبيق (lib/core/constants.dart) */
+const STATUS = {
+  pending:   {label:'قيد المراجعة', cls:'warn'},
+  confirmed: {label:'تم التأكيد',   cls:'blue'},
+  preparing: {label:'بيتجهّز',      cls:'blue'},
+  on_way:    {label:'في الطريق',    cls:'blue'},
+  delivered: {label:'تم التسليم',   cls:'green'},
+  cancelled: {label:'ملغي',         cls:'grey'},
+};
+/* الخطوة اللي بعد كل حالة — عشان يبقى فيه زرار واحد واضح لصاحب المحل */
+const NEXT = {
+  pending:'confirmed', confirmed:'preparing', preparing:'on_way', on_way:'delivered'
+};
+
+const state = {
+  settings:{}, products:{}, categories:{}, banners:{}, coupons:{}, orders:{},
+  knownOrders:new Set(), firstOrdersLoad:true,
+};
+
+/* ══════════ الصور ══════════
+   Firebase Storage مش متاح في الباقة المجانية، فبنضغط الصورة في المتصفح
+   ونخزّنها كـ data URL جوه قاعدة البيانات. ٥٠٠ بكسل بجودة ٧٠٪ بتطلع
+   حوالي ٢٥ كيلوبايت — حجم مناسب لكتالوج محل. */
+const IMG_MAX = 500, IMG_QUALITY = 0.72;
+
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('decode failed'));
+      img.onload = () => {
+        let {width:w, height:h} = img;
+        if (w > IMG_MAX || h > IMG_MAX){
+          const scale = IMG_MAX / Math.max(w, h);
+          w = Math.round(w * scale); h = Math.round(h * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        // خلفية بيضا عشان صور PNG الشفافة ما تطلعش سودا بعد التحويل لـ JPEG
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', IMG_QUALITY));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* حقل رفع صورة قابل لإعادة الاستخدام في كل النوافذ */
+function imageField(currentValue, label = 'الصورة'){
+  return `
+    <div class="field">
+      <label>${label}</label>
+      <div style="display:flex;gap:12px;align-items:center">
+        <img class="thumb" id="imgPreview" src="${esc(currentValue) || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='}">
+        <div style="flex:1">
+          <input type="file" id="imgFile" accept="image/*">
+          <div class="hint">هتتضغط تلقائيًا. ممكن كمان تلزق رابط صورة جاهز:</div>
+          <input id="imgUrl" placeholder="https://…" style="margin-top:6px"
+                 value="${currentValue && !String(currentValue).startsWith('data:') ? esc(currentValue) : ''}">
+        </div>
+      </div>
+      <input type="hidden" id="imgData" value="${esc(currentValue)}">
+    </div>`;
+}
+
+function wireImageField(){
+  const file = $('#imgFile'), url = $('#imgUrl'), data = $('#imgData'), prev = $('#imgPreview');
+  if (!file) return;
+  file.addEventListener('change', async () => {
+    const f = file.files[0];
+    if (!f) return;
+    try {
+      const compressed = await compressImage(f);
+      data.value = compressed;
+      prev.src = compressed;
+      url.value = '';
+    } catch { toast('الصورة دي مش مقروءة، جرّب صورة تانية'); }
+  });
+  url.addEventListener('input', () => {
+    if (url.value.trim()){ data.value = url.value.trim(); prev.src = url.value.trim(); }
+  });
+}
+
+/* ══════════ النافذة ══════════ */
+
+function openModal(html){
+  $('#modalInner').innerHTML = html;
+  $('#modal').classList.add('on');
+}
+function closeModal(){ $('#modal').classList.remove('on'); }
+$('#modal').addEventListener('click', (e) => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+/* ══════════ صوت التنبيه ══════════
+   نغمة مولّدة بالمتصفح — مفيش ملف صوت خارجي يتحمّل أو يضيع. */
+let audioCtx = null;
+function beep(){
+  if (!$('#soundOn').checked) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    [0, 0.22, 0.44].forEach((delay, i) => {
+      const osc  = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880 + i * 160;
+      gain.gain.setValueAtTime(0.0001, audioCtx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.3, audioCtx.currentTime + delay + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + delay + 0.18);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(audioCtx.currentTime + delay);
+      osc.stop(audioCtx.currentTime + delay + 0.2);
+    });
+  } catch {}
+}
+
+/* ══════════ الدخول ══════════ */
+
+$('#lgBtn').addEventListener('click', doLogin);
+$('#lgPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+async function doLogin(){
+  const btn = $('#lgBtn');
+  btn.disabled = true;
+  $('#lgErr').textContent = '';
+  try {
+    await signInWithEmailAndPassword(auth, $('#lgEmail').value.trim(), $('#lgPass').value);
+  } catch (e) {
+    const msg = {
+      'auth/invalid-credential':'البريد أو كلمة المرور غلط',
+      'auth/wrong-password':'كلمة المرور غلط',
+      'auth/user-not-found':'الحساب ده مش موجود',
+      'auth/invalid-email':'البريد الإلكتروني مش مظبوط',
+      'auth/too-many-requests':'محاولات كتير — استنى شوية وجرّب تاني',
+      'auth/network-request-failed':'مفيش نت',
+      // الحالتين دول بيظهروا وقت التركيب لو خطوة (١) في SETUP.md لسه ماتعملتش
+      'auth/operation-not-allowed':'فعّل Email/Password من Firebase Console — راجع SETUP.md خطوة (١)',
+      'auth/configuration-not-found':'فعّل Email/Password من Firebase Console — راجع SETUP.md خطوة (١)',
+    }[e.code] || `مقدرناش ندخّلك (${e.code || 'خطأ غير معروف'})`;
+    $('#lgErr').textContent = msg;
+  } finally { btn.disabled = false; }
+}
+
+$('#logout').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  if (user){
+    $('#login').style.display = 'none';
+    $('#app').style.display = 'block';
+    $('#who').textContent = user.email;
+    startListeners();
+  } else {
+    $('#login').style.display = 'flex';
+    $('#app').style.display = 'none';
+  }
+});
+
+/* ══════════ التبويبات ══════════ */
+
+$$('nav button').forEach(b => b.addEventListener('click', () => {
+  $$('nav button').forEach(x => x.classList.remove('on'));
+  $$('.tab').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  $('#tab-' + b.dataset.tab).classList.add('on');
+}));
+
+/* ══════════ الاستماع للبيانات ══════════ */
+
+let listening = false;
+function startListeners(){
+  if (listening) return;
+  listening = true;
+
+  onValue(ref(db, 'settings'), s => { state.settings = s.val() || {}; renderSettings(); });
+  onValue(ref(db, 'categories'), s => { state.categories = s.val() || {}; renderCategories(); renderProducts(); fillCategorySelects(); });
+  onValue(ref(db, 'products'), s => { state.products = s.val() || {}; renderProducts(); });
+  onValue(ref(db, 'banners'), s => { state.banners = s.val() || {}; renderBanners(); });
+  onValue(ref(db, 'coupons'), s => { state.coupons = s.val() || {}; renderCoupons(); });
+  onValue(ref(db, 'orders'), s => { state.orders = s.val() || {}; onOrdersChanged(); });
+}
+
+/* ══════════ الطلبات ══════════ */
+
+$('#ordFilter').addEventListener('change', renderOrders);
+$('#ordSearch').addEventListener('input', renderOrders);
+
+function onOrdersChanged(){
+  const ids = Object.keys(state.orders);
+
+  // أول تحميل بنسجّل الطلبات الموجودة من غير صوت — الصوت للجديد بس.
+  if (state.firstOrdersLoad){
+    ids.forEach(id => state.knownOrders.add(id));
+    state.firstOrdersLoad = false;
+  } else {
+    const fresh = ids.filter(id => !state.knownOrders.has(id));
+    fresh.forEach(id => state.knownOrders.add(id));
+    if (fresh.length){
+      beep();
+      toast(fresh.length === 1 ? '🔔 طلب جديد وصل!' : `🔔 ${fresh.length} طلبات جديدة!`);
+    }
+  }
+
+  const pending = ids.filter(id => (state.orders[id].status || 'pending') === 'pending').length;
+  const badge = $('#pendingCount');
+  badge.textContent = pending;
+  badge.style.display = pending ? 'inline-block' : 'none';
+  document.title = pending ? `(${pending}) أخضر — لوحة التحكم` : 'أخضر — لوحة التحكم';
+
+  renderOrders();
+}
+
+function renderOrders(){
+  const filter = $('#ordFilter').value;
+  const q = $('#ordSearch').value.trim().toLowerCase();
+
+  let list = Object.entries(state.orders).map(([id, o]) => ({id, ...o}));
+
+  list = list.filter(o => {
+    const st = o.status || 'pending';
+    if (filter === 'active') return !['delivered','cancelled'].includes(st);
+    if (filter !== 'all' && st !== filter) return false;
+    return true;
+  });
+
+  if (q){
+    list = list.filter(o =>
+      String(o.number || '').includes(q) ||
+      String(o.customerPhone || '').includes(q) ||
+      String(o.customerName || '').toLowerCase().includes(q));
+  }
+
+  list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  const revenue = Object.values(state.orders)
+    .filter(o => o.status === 'delivered')
+    .reduce((sum, o) => sum + Number(o.total || 0), 0);
+  $('#ordStats').textContent =
+    `${num(list.length)} طلب معروض • إجمالي المُسلَّم ${money(revenue)}`;
+
+  if (!list.length){
+    $('#ordersList').innerHTML = '<div class="empty">مفيش طلبات هنا 🌿</div>';
+    return;
+  }
+
+  $('#ordersList').innerHTML = list.map(orderCard).join('');
+
+  $$('[data-adv]').forEach(b => b.addEventListener('click', () => advance(b.dataset.adv, b.dataset.to)));
+  $$('[data-cancel]').forEach(b => b.addEventListener('click', () => cancelOrder(b.dataset.cancel)));
+  $$('[data-call]').forEach(b => b.addEventListener('click', () => location.href = 'tel:' + b.dataset.call));
+  $$('[data-wa]').forEach(b => b.addEventListener('click', () => {
+    window.open('https://wa.me/2' + b.dataset.wa, '_blank');
+  }));
+  $$('[data-map]').forEach(b => b.addEventListener('click', () => {
+    window.open(`https://www.google.com/maps?q=${b.dataset.map}`, '_blank');
+  }));
+}
+
+function orderCard(o){
+  const st = o.status || 'pending';
+  const info = STATUS[st] || STATUS.pending;
+  const lines = Array.isArray(o.lines) ? o.lines : Object.values(o.lines || {});
+  const next = NEXT[st];
+  const addr = o.address || {};
+
+  return `
+  <div class="ordercard ${st}">
+    <div class="head">
+      <span class="num">#${esc(o.number || '')}</span>
+      <span class="pill ${info.cls}">${info.label}</span>
+      <span style="color:var(--muted);font-size:12.5px">${when(o.createdAt)}</span>
+      <span style="flex:1"></span>
+      <span class="total">${money(o.total)}</span>
+    </div>
+
+    <div class="lines">
+      ${lines.map(l =>
+        `• ${esc(l.name)} — ${Number(l.qty||0)} ${esc(l.unit||'')} × ${money(l.price)} = <b>${money(l.total)}</b>`
+      ).join('<br>')}
+    </div>
+
+    <div class="meta">
+      <b>${esc(o.customerName || 'عميل')}</b> — ${esc(o.customerPhone || '')}<br>
+      📍 ${esc(o.addressText || '')}${addr.details ? ' — ' + esc(addr.details) : ''}<br>
+      🕐 ${o.slot === 'now' ? 'التوصيل في أقرب وقت' : 'التوصيل الساعة ' + esc(o.slot)}
+      ${o.note ? '<br>📝 ' + esc(o.note) : ''}
+      ${Number(o.discount) > 0 ? `<br>🏷️ خصم ${money(o.discount)}${o.couponCode ? ' (' + esc(o.couponCode) + ')' : ''}` : ''}
+      <br>🚚 توصيل ${Number(o.delivery) ? money(o.delivery) : 'مجاني'} • 💵 دفع عند الاستلام
+      ${o.cancelReason ? '<br>❌ سبب الإلغاء: ' + esc(o.cancelReason) : ''}
+    </div>
+
+    <div class="acts">
+      ${next ? `<button class="btn sm" data-adv="${o.id}" data-to="${next}">${STATUS[next].label} ✓</button>` : ''}
+      ${o.customerPhone ? `<button class="btn ghost sm" data-call="${esc(o.customerPhone)}">📞 اتصال</button>` : ''}
+      ${o.customerPhone ? `<button class="btn ghost sm" data-wa="${esc(o.customerPhone)}">واتساب</button>` : ''}
+      ${addr.lat ? `<button class="btn ghost sm" data-map="${addr.lat},${addr.lng}">🗺️ الموقع</button>` : ''}
+      ${!['delivered','cancelled'].includes(st) ? `<button class="btn danger sm" data-cancel="${o.id}">إلغاء</button>` : ''}
+    </div>
+  </div>`;
+}
+
+async function advance(id, to){
+  await update(ref(db, 'orders/' + id), {
+    status: to,
+    [`statusHistory/${to}`]: Date.now(),
+  });
+  toast('الحالة اتحدّثت — العميل شافها');
+}
+
+async function cancelOrder(id){
+  const reason = prompt('سبب الإلغاء (هيظهر للعميل):', '');
+  if (reason === null) return;
+  await update(ref(db, 'orders/' + id), {
+    status: 'cancelled',
+    cancelReason: reason,
+    'statusHistory/cancelled': Date.now(),
+  });
+  toast('الطلب اتلغى');
+}
+
+/* ══════════ الأصناف ══════════ */
+
+$('#addProduct').addEventListener('click', () => productModal(null));
+$('#prodCat').addEventListener('change', renderProducts);
+$('#prodSearch').addEventListener('input', renderProducts);
+
+function fillCategorySelects(){
+  const opts = Object.entries(state.categories)
+    .map(([id, c]) => `<option value="${id}">${esc(c.name)}</option>`).join('');
+  const sel = $('#prodCat'), keep = sel.value;
+  sel.innerHTML = '<option value="">كل الأقسام</option>' + opts;
+  sel.value = keep;
+}
+
+function renderProducts(){
+  const catFilter = $('#prodCat').value;
+  const q = $('#prodSearch').value.trim().toLowerCase();
+
+  let list = Object.entries(state.products).map(([id, p]) => ({id, ...p}));
+  if (catFilter) list = list.filter(p => p.categoryId === catFilter);
+  if (q) list = list.filter(p => String(p.name || '').toLowerCase().includes(q));
+  list.sort((a, b) => (a.sort || 0) - (b.sort || 0) || String(a.name).localeCompare(String(b.name), 'ar'));
+
+  const total = Object.keys(state.products).length;
+  const out = Object.values(state.products).filter(p => p.available === false).length;
+  $('#prodStats').textContent = `${num(total)} صنف • ${num(out)} خلصان`;
+
+  if (!list.length){
+    $('#productsTable').innerHTML =
+      '<div class="empty">مفيش أصناف.<br>ابدأ بإضافة أول صنف من الزرار الأخضر فوق 🌿</div>';
+    return;
+  }
+
+  $('#productsTable').innerHTML = `
+  <table>
+    <thead><tr>
+      <th>الصورة</th><th>الاسم</th><th>القسم</th><th>السعر</th>
+      <th>الوحدة</th><th>الحالة</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${list.map(p => `
+        <tr>
+          <td><img src="${esc(p.image) || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='}"></td>
+          <td>
+            <b>${esc(p.name)}</b>
+            ${p.featured ? ' <span class="pill green">مميّز</span>' : ''}
+            ${(p.tags && p.tags.length) ? `<div style="color:var(--muted);font-size:11.5px;margin-top:3px">${esc([].concat(p.tags).join('، '))}</div>` : ''}
+          </td>
+          <td>${esc(state.categories[p.categoryId]?.name || '—')}</td>
+          <td>
+            <b>${money(p.price)}</b>
+            ${Number(p.oldPrice) > Number(p.price) ? `<div style="color:var(--muted);font-size:11.5px;text-decoration:line-through">${money(p.oldPrice)}</div>` : ''}
+          </td>
+          <td>${Number(p.step || 1)} ${esc(p.unit || 'كجم')}</td>
+          <td><span class="pill ${p.available === false ? 'red' : 'green'}">${p.available === false ? 'خلص' : 'متاح'}</span></td>
+          <td style="white-space:nowrap">
+            <button class="btn ghost sm" data-toggle="${p.id}">${p.available === false ? 'رجّعه' : 'خلص'}</button>
+            <button class="btn ghost sm" data-edit="${p.id}">تعديل</button>
+            <button class="btn danger sm" data-del="${p.id}">حذف</button>
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  $$('[data-edit]').forEach(b => b.addEventListener('click', () => productModal(b.dataset.edit)));
+  $$('[data-toggle]').forEach(b => b.addEventListener('click', async () => {
+    const p = state.products[b.dataset.toggle];
+    await update(ref(db, 'products/' + b.dataset.toggle), {available: p.available === false});
+  }));
+  $$('[data-del]').forEach(b => b.addEventListener('click', async () => {
+    const p = state.products[b.dataset.del];
+    if (!confirm(`تحذف "${p.name}" نهائيًا؟\nلو الصنف خلص بس، استخدم زرار "خلص" أحسن.`)) return;
+    await remove(ref(db, 'products/' + b.dataset.del));
+    toast('الصنف اتحذف');
+  }));
+}
+
+function productModal(id){
+  const p = id ? state.products[id] : {};
+  const tags = [].concat(p.tags || []).join('، ');
+
+  openModal(`
+    <h3>${id ? 'تعديل صنف' : 'صنف جديد'}</h3>
+    ${imageField(p.image || '')}
+    <div class="field">
+      <label>اسم الصنف *</label>
+      <input id="pName" value="${esc(p.name || '')}" placeholder="مثال: طماطم">
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>القسم *</label>
+        <select id="pCat">
+          <option value="">— اختار —</option>
+          ${Object.entries(state.categories).map(([cid, c]) =>
+            `<option value="${cid}" ${p.categoryId === cid ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>السعر *</label>
+        <input id="pPrice" type="number" step="0.25" min="0" value="${p.price ?? ''}">
+      </div>
+      <div class="field">
+        <label>السعر قبل الخصم</label>
+        <input id="pOld" type="number" step="0.25" min="0" value="${p.oldPrice || ''}">
+        <div class="hint">سيبه فاضي لو مفيش عرض</div>
+      </div>
+      <div class="field">
+        <label>الوحدة</label>
+        <input id="pUnit" value="${esc(p.unit || 'كجم')}" placeholder="كجم / حزمة / قطعة">
+      </div>
+      <div class="field">
+        <label>خطوة الكمية</label>
+        <input id="pStep" type="number" step="0.25" min="0.25" value="${p.step || 1}">
+        <div class="hint">٠.٥ يعني العميل يزوّد نص كيلو في المرة</div>
+      </div>
+      <div class="field">
+        <label>ترتيب العرض</label>
+        <input id="pSort" type="number" value="${p.sort || 0}">
+      </div>
+    </div>
+    <div class="field">
+      <label>وصف قصير</label>
+      <textarea id="pDesc" rows="2" placeholder="طماطم طازجة ومختارة بعناية من أفضل المزارع">${esc(p.description || '')}</textarea>
+    </div>
+    <div class="field">
+      <label>وسوم فرعية</label>
+      <input id="pTags" value="${esc(tags)}" placeholder="ثمار، ورقيات، جذور">
+      <div class="hint">افصل بينهم بفاصلة — بتظهر كفلاتر جوه القسم في التطبيق</div>
+    </div>
+    <div style="display:flex;gap:20px;margin:6px 0 4px">
+      <label class="switch"><input type="checkbox" id="pAvail" ${p.available === false ? '' : 'checked'}> متاح دلوقتي</label>
+      <label class="switch"><input type="checkbox" id="pFeat" ${p.featured ? 'checked' : ''}> مميّز (الأكثر طلبًا)</label>
+    </div>
+    <div class="actions">
+      <button class="btn" id="pSave">حفظ</button>
+      <button class="btn ghost" id="pCancel">إلغاء</button>
+    </div>`);
+
+  wireImageField();
+  $('#pCancel').addEventListener('click', closeModal);
+  $('#pSave').addEventListener('click', async () => {
+    const name  = $('#pName').value.trim();
+    const cat   = $('#pCat').value;
+    const price = parseFloat($('#pPrice').value);
+
+    if (!name)             return toast('اكتب اسم الصنف');
+    if (!cat)              return toast('اختار القسم');
+    if (!(price >= 0))     return toast('اكتب سعر صحيح');
+
+    const data = {
+      name, categoryId: cat, price,
+      oldPrice: parseFloat($('#pOld').value) || 0,
+      unit: $('#pUnit').value.trim() || 'كجم',
+      step: parseFloat($('#pStep').value) || 1,
+      sort: parseInt($('#pSort').value) || 0,
+      description: $('#pDesc').value.trim(),
+      tags: $('#pTags').value.split(/[،,]/).map(t => t.trim()).filter(Boolean),
+      image: $('#imgData').value,
+      available: $('#pAvail').checked,
+      featured: $('#pFeat').checked,
+      updatedAt: Date.now(),
+    };
+
+    if (id) await update(ref(db, 'products/' + id), data);
+    else    await push(ref(db, 'products'), data);
+
+    closeModal();
+    toast(id ? 'الصنف اتحدّث' : 'الصنف اتضاف');
+  });
+}
+
+/* ══════════ الأقسام ══════════ */
+
+$('#addCategory').addEventListener('click', () => categoryModal(null));
+
+function renderCategories(){
+  const list = Object.entries(state.categories).map(([id, c]) => ({id, ...c}))
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0));
+
+  if (!list.length){
+    $('#categoriesTable').innerHTML =
+      '<div class="empty">مفيش أقسام.<br>ابدأ بأقسام زي: الخضروات، الفاكهة، الورقيات 🌿</div>';
+    return;
+  }
+
+  $('#categoriesTable').innerHTML = `
+  <table>
+    <thead><tr><th>الصورة</th><th>الاسم</th><th>عدد الأصناف</th><th>الترتيب</th><th>الحالة</th><th></th></tr></thead>
+    <tbody>
+      ${list.map(c => {
+        const count = Object.values(state.products).filter(p => p.categoryId === c.id).length;
+        return `
+        <tr>
+          <td><img src="${esc(c.image) || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='}"></td>
+          <td><b>${esc(c.name)}</b></td>
+          <td>${num(count)}</td>
+          <td>${c.sort || 0}</td>
+          <td><span class="pill ${c.active === false ? 'grey' : 'green'}">${c.active === false ? 'مخفي' : 'ظاهر'}</span></td>
+          <td style="white-space:nowrap">
+            <button class="btn ghost sm" data-cedit="${c.id}">تعديل</button>
+            <button class="btn danger sm" data-cdel="${c.id}" data-count="${count}">حذف</button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+
+  $$('[data-cedit]').forEach(b => b.addEventListener('click', () => categoryModal(b.dataset.cedit)));
+  $$('[data-cdel]').forEach(b => b.addEventListener('click', async () => {
+    const count = Number(b.dataset.count);
+    if (count > 0)
+      return alert(`القسم ده فيه ${count} صنف.\nانقلهم لقسم تاني أو احذفهم الأول.`);
+    if (!confirm('تحذف القسم ده؟')) return;
+    await remove(ref(db, 'categories/' + b.dataset.cdel));
+    toast('القسم اتحذف');
+  }));
+}
+
+function categoryModal(id){
+  const c = id ? state.categories[id] : {};
+  openModal(`
+    <h3>${id ? 'تعديل قسم' : 'قسم جديد'}</h3>
+    ${imageField(c.image || '', 'أيقونة القسم')}
+    <div class="field">
+      <label>اسم القسم *</label>
+      <input id="cName" value="${esc(c.name || '')}" placeholder="مثال: الخضروات">
+    </div>
+    <div class="field">
+      <label>ترتيب العرض</label>
+      <input id="cSort" type="number" value="${c.sort || 0}">
+    </div>
+    <label class="switch"><input type="checkbox" id="cActive" ${c.active === false ? '' : 'checked'}> ظاهر في التطبيق</label>
+    <div class="actions">
+      <button class="btn" id="cSave">حفظ</button>
+      <button class="btn ghost" id="cCancel">إلغاء</button>
+    </div>`);
+
+  wireImageField();
+  $('#cCancel').addEventListener('click', closeModal);
+  $('#cSave').addEventListener('click', async () => {
+    const name = $('#cName').value.trim();
+    if (!name) return toast('اكتب اسم القسم');
+    const data = {
+      name,
+      image: $('#imgData').value,
+      sort: parseInt($('#cSort').value) || 0,
+      active: $('#cActive').checked,
+    };
+    if (id) await update(ref(db, 'categories/' + id), data);
+    else    await push(ref(db, 'categories'), data);
+    closeModal();
+    toast(id ? 'القسم اتحدّث' : 'القسم اتضاف');
+  });
+}
+
+/* ══════════ البانرات ══════════ */
+
+$('#addBanner').addEventListener('click', () => bannerModal(null));
+
+function renderBanners(){
+  const list = Object.entries(state.banners).map(([id, b]) => ({id, ...b}))
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0));
+
+  if (!list.length){
+    $('#bannersTable').innerHTML =
+      '<div class="empty">مفيش بانرات.<br>لو مضفتش حاجة، التطبيق بيعرض بانر افتراضي جميل 🌿</div>';
+    return;
+  }
+
+  $('#bannersTable').innerHTML = `
+  <table>
+    <thead><tr><th>الصورة</th><th>العنوان</th><th>يفتح قسم</th><th>الترتيب</th><th>الحالة</th><th></th></tr></thead>
+    <tbody>
+      ${list.map(b => `
+        <tr>
+          <td><img src="${esc(b.image) || 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='}" style="width:80px;height:44px;object-fit:cover"></td>
+          <td><b>${esc(b.title || '—')}</b><div style="color:var(--muted);font-size:11.5px">${esc(b.subtitle || '')}</div></td>
+          <td>${esc(state.categories[b.categoryId]?.name || '—')}</td>
+          <td>${b.sort || 0}</td>
+          <td><span class="pill ${b.active === false ? 'grey' : 'green'}">${b.active === false ? 'مخفي' : 'ظاهر'}</span></td>
+          <td style="white-space:nowrap">
+            <button class="btn ghost sm" data-bedit="${b.id}">تعديل</button>
+            <button class="btn danger sm" data-bdel="${b.id}">حذف</button>
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  $$('[data-bedit]').forEach(b => b.addEventListener('click', () => bannerModal(b.dataset.bedit)));
+  $$('[data-bdel]').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('تحذف البانر ده؟')) return;
+    await remove(ref(db, 'banners/' + b.dataset.bdel));
+    toast('البانر اتحذف');
+  }));
+}
+
+function bannerModal(id){
+  const b = id ? state.banners[id] : {};
+  openModal(`
+    <h3>${id ? 'تعديل بانر' : 'بانر جديد'}</h3>
+    ${imageField(b.image || '', 'صورة البانر (عرضية)')}
+    <div class="field"><label>العنوان</label>
+      <input id="bTitle" value="${esc(b.title || '')}" placeholder="طازج يوميًا"></div>
+    <div class="field"><label>السطر التاني</label>
+      <input id="bSub" value="${esc(b.subtitle || '')}" placeholder="خضار وفاكهة مختارة بعناية"></div>
+    <div class="grid2">
+      <div class="field"><label>يفتح قسم</label>
+        <select id="bCat">
+          <option value="">— مفيش —</option>
+          ${Object.entries(state.categories).map(([cid, c]) =>
+            `<option value="${cid}" ${b.categoryId === cid ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>ترتيب العرض</label>
+        <input id="bSort" type="number" value="${b.sort || 0}"></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="bActive" ${b.active === false ? '' : 'checked'}> ظاهر في التطبيق</label>
+    <div class="actions">
+      <button class="btn" id="bSave">حفظ</button>
+      <button class="btn ghost" id="bCancel">إلغاء</button>
+    </div>`);
+
+  wireImageField();
+  $('#bCancel').addEventListener('click', closeModal);
+  $('#bSave').addEventListener('click', async () => {
+    const data = {
+      title: $('#bTitle').value.trim(),
+      subtitle: $('#bSub').value.trim(),
+      image: $('#imgData').value,
+      categoryId: $('#bCat').value,
+      sort: parseInt($('#bSort').value) || 0,
+      active: $('#bActive').checked,
+    };
+    if (!data.image && !data.title) return toast('محتاج صورة أو عنوان على الأقل');
+    if (id) await update(ref(db, 'banners/' + id), data);
+    else    await push(ref(db, 'banners'), data);
+    closeModal();
+    toast(id ? 'البانر اتحدّث' : 'البانر اتضاف');
+  });
+}
+
+/* ══════════ أكواد الخصم ══════════ */
+
+$('#addCoupon').addEventListener('click', () => couponModal(null));
+
+function renderCoupons(){
+  const list = Object.entries(state.coupons).map(([code, c]) => ({code, ...c}));
+
+  if (!list.length){
+    $('#couponsTable').innerHTML =
+      '<div class="empty">مفيش أكواد خصم.<br>الكود بيتكتب في السلة عند العميل 🏷️</div>';
+    return;
+  }
+
+  $('#couponsTable').innerHTML = `
+  <table>
+    <thead><tr><th>الكود</th><th>الخصم</th><th>الحد الأدنى للطلب</th><th>الحالة</th><th></th></tr></thead>
+    <tbody>
+      ${list.map(c => `
+        <tr>
+          <td><b style="letter-spacing:1px">${esc(c.code)}</b></td>
+          <td>${Number(c.percent) > 0 ? `${c.percent}٪` : money(c.amount)}</td>
+          <td>${Number(c.minOrder) > 0 ? money(c.minOrder) : '—'}</td>
+          <td><span class="pill ${c.active === false ? 'grey' : 'green'}">${c.active === false ? 'موقوف' : 'شغّال'}</span></td>
+          <td style="white-space:nowrap">
+            <button class="btn ghost sm" data-kedit="${esc(c.code)}">تعديل</button>
+            <button class="btn danger sm" data-kdel="${esc(c.code)}">حذف</button>
+          </td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  $$('[data-kedit]').forEach(b => b.addEventListener('click', () => couponModal(b.dataset.kedit)));
+  $$('[data-kdel]').forEach(b => b.addEventListener('click', async () => {
+    if (!confirm('تحذف الكود ده؟')) return;
+    await remove(ref(db, 'coupons/' + b.dataset.kdel));
+    toast('الكود اتحذف');
+  }));
+}
+
+function couponModal(code){
+  const c = code ? state.coupons[code] : {};
+  openModal(`
+    <h3>${code ? 'تعديل كود' : 'كود خصم جديد'}</h3>
+    <div class="field">
+      <label>الكود *</label>
+      <input id="kCode" value="${esc(code || '')}" ${code ? 'disabled' : ''}
+             placeholder="AKHDAR10" style="text-transform:uppercase;letter-spacing:1px">
+      <div class="hint">حروف إنجليزي وأرقام. العميل بيكتبه في السلة.</div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>نسبة الخصم ٪</label>
+        <input id="kPercent" type="number" min="0" max="100" value="${c.percent || ''}">
+      </div>
+      <div class="field">
+        <label>أو مبلغ ثابت</label>
+        <input id="kAmount" type="number" min="0" step="0.5" value="${c.amount || ''}">
+        <div class="hint">النسبة لها الأولوية لو الاتنين متملّيين</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>الحد الأدنى للطلب</label>
+      <input id="kMin" type="number" min="0" step="1" value="${c.minOrder || ''}">
+    </div>
+    <label class="switch"><input type="checkbox" id="kActive" ${c.active === false ? '' : 'checked'}> شغّال</label>
+    <div class="actions">
+      <button class="btn" id="kSave">حفظ</button>
+      <button class="btn ghost" id="kCancel">إلغاء</button>
+    </div>`);
+
+  $('#kCancel').addEventListener('click', closeModal);
+  $('#kSave').addEventListener('click', async () => {
+    const key = (code || $('#kCode').value.trim().toUpperCase()).replace(/[.#$/\[\]]/g, '');
+    if (!key) return toast('اكتب الكود');
+
+    const percent = parseFloat($('#kPercent').value) || 0;
+    const amount  = parseFloat($('#kAmount').value) || 0;
+    if (!percent && !amount) return toast('حدد نسبة أو مبلغ خصم');
+
+    if (!code){
+      const exists = await get(ref(db, 'coupons/' + key));
+      if (exists.exists()) return toast('الكود ده موجود بالفعل');
+    }
+
+    await set(ref(db, 'coupons/' + key), {
+      percent, amount,
+      minOrder: parseFloat($('#kMin').value) || 0,
+      active: $('#kActive').checked,
+    });
+    closeModal();
+    toast(code ? 'الكود اتحدّث' : 'الكود اتضاف');
+  });
+}
+
+/* ══════════ الإعدادات ══════════ */
+
+function renderSettings(){
+  const s = state.settings;
+  $('#stOpen').value      = s.open === false ? 'false' : 'true';
+  $('#stClosedMsg').value = s.closedMessage || '';
+  $('#stCurrency').value  = s.currency || 'ج.م';
+  $('#stEta').value       = s.deliveryEtaMinutes || '';
+  $('#stFee').value       = s.deliveryFee || 0;
+  $('#stFree').value      = s.freeDeliveryOver || 0;
+  $('#stMin').value       = s.minOrder || 0;
+  $('#stHours').value     = s.workingHours || '';
+  $('#stAnnounce').value  = s.announcement || '';
+
+  $('#shopState').innerHTML = s.open === false
+    ? '<span class="pill red">المحل مقفول</span>'
+    : '<span class="pill green">المحل مفتوح</span>';
+}
+
+$('#saveSettings').addEventListener('click', async () => {
+  await update(ref(db, 'settings'), {
+    open: $('#stOpen').value === 'true',
+    closedMessage: $('#stClosedMsg').value.trim() || 'المحل مقفول دلوقتي، اطلب في مواعيد العمل',
+    currency: $('#stCurrency').value.trim() || 'ج.م',
+    deliveryEtaMinutes: $('#stEta').value.trim() || '٣٠ - ٤٥ دقيقة',
+    deliveryFee: parseFloat($('#stFee').value) || 0,
+    freeDeliveryOver: parseFloat($('#stFree').value) || 0,
+    minOrder: parseFloat($('#stMin').value) || 0,
+    workingHours: $('#stHours').value.trim(),
+    announcement: $('#stAnnounce').value.trim(),
+  });
+  toast('الإعدادات اتحفظت');
+});
+</script>
+</body>
+</html>

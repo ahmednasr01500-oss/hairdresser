@@ -1,0 +1,83 @@
+{
+  "//": [
+    "قواعد أمان قاعدة البيانات لتطبيق أخضر.",
+    "الفكرة: الكتالوج مقروء للكل (عشان العميل يتفرّج قبل ما يسجّل)،",
+    "بس الكتابة عليه لصاحب المحل بس. والطلبات كل عميل يشوف طلباته هو بس.",
+    "صاحب المحل بيتعرّف عليه من مساره في admins/{uid} — مش من إيميله،",
+    "عشان لو غيّر الإيميل بعدين ما يقفلش على نفسه.",
+    "طريقة الرفع موجودة في SETUP.md خطوة (٤)."
+  ],
+
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "admins": {
+      "//": "الكتابة هنا من Firebase Console بس — مش من التطبيق ولا اللوحة.",
+      ".read": false,
+      ".write": false
+    },
+
+    "settings": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+
+    "categories": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+
+    "products": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+
+    "banners": {
+      ".read": true,
+      ".write": "root.child('admins').child(auth.uid).val() === true"
+    },
+
+    "coupons": {
+      "//": "القراءة على الكود المحدد بس — العميل يقدر يتحقق من كود يعرفه، لكن ما يقدرش يجيب قايمة الأكواد كلها.",
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      ".write": "root.child('admins').child(auth.uid).val() === true",
+      "$code": {
+        ".read": true
+      }
+    },
+
+    "counters": {
+      "orderNumber": {
+        "//": "عدّاد أرقام الطلبات. أي عميل مسجّل يقدر يزوّده بواحد وقت الطلب.",
+        ".read": "auth !== null",
+        ".write": "auth !== null && newData.isNumber() && (!data.exists() || newData.val() > data.val())"
+      }
+    },
+
+    "orders": {
+      "//": "صاحب المحل بس اللي يقدر يقرأ القايمة كلها.",
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      "$orderId": {
+        ".read": "auth !== null && (data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth !== null && ((!data.exists() && newData.child('uid').val() === auth.uid) || data.child('uid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)",
+        ".validate": "newData.hasChildren(['uid', 'status', 'createdAt', 'total'])"
+      }
+    },
+
+    "user_orders": {
+      "$uid": {
+        ".read": "auth.uid === $uid || root.child('admins').child(auth.uid).val() === true",
+        ".write": "auth.uid === $uid"
+      }
+    },
+
+    "customers": {
+      ".read": "root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".read": "auth.uid === $uid || root.child('admins').child(auth.uid).val() === true",
+        ".write": "auth.uid === $uid"
+      }
+    }
+  }
+}
